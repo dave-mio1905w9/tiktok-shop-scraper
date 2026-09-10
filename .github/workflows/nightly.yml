@@ -1,0 +1,51 @@
+name: nightly
+
+on:
+  schedule:
+    - cron: "21 */1 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  nightly:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: validate readme
+        run: |
+          set -eu
+          f="README.md"
+          [ -f "$f" ] || exit 0
+          bad=0
+          for t in $(grep -oE "\(([^) ]+)\)" "$f" | tr -d "()" || true); do
+            case "$t" in
+              http*|"#"*) : ;;
+              *) [ -e "$t" ] || bad=$((bad + 1)) ;;
+            esac
+          done
+          echo "checked $f: $bad broken local link(s)"
+
+      - name: update
+        run: |
+          set -eu
+          f="README.md"
+          [ -f "$f" ] || exit 0
+          stamp="<!-- checked: $(date -u +%Y-%m-%d) -->"
+          if grep -q "^<!-- checked: " "$f"; then
+            sed -i "s|^<!-- checked: .*|$stamp|" "$f"
+          else
+            printf '\n%s\n' "$stamp" >> "$f"
+          fi
+
+      - name: commit
+        run: |
+          set -eu
+          git config user.name "dave-mio1905w9"
+          git config user.email "279208033+dave-mio1905w9@users.noreply.github.com"
+          git add -- "README.md"
+          git diff --cached --quiet && exit 0
+          git commit -m "chore: nightly tidy"
+          git push
