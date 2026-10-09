@@ -7,4 +7,4 @@ I needed to watch pricing on a few TikTok Shop categories without dealing with t
 pip install -r requirements.txt
 
 
-<!-- checked: 2026-10-08 -->
+<!-- checked: 2026-10-09 -->
